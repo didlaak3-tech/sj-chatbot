@@ -1,5 +1,6 @@
 import os
 
+# 1. 순수한 HTML/JS/CSS 코드만 담은 문자열 정의
 html_content = """<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -22,7 +23,7 @@ html_content = """<!DOCTYPE html>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Malgun Gothic', sans-serif; }
         body { background-color: var(--bg-color); color: #334155; display: flex; height: 100vh; overflow: hidden; }
 
-        /* 왼쪽 사이드바: 루브릭 제거 및 콤팩트화 */
+        /* 왼쪽 사이드바 */
         .sidebar {
             width: 280px;
             background: var(--sidebar-bg);
@@ -39,18 +40,20 @@ html_content = """<!DOCTYPE html>
         .section-title { font-size: 13px; font-weight: bold; color: var(--primary-color); margin: 15px 0 10px; display: flex; align-items: center; gap: 8px; }
         .info-card { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-size: 12.5px; line-height: 1.6; margin-bottom: 10px; }
         
-        /* 메인 레이아웃: 설정 영역을 줄이고 채팅창(실시간 프리뷰)을 극대화 */
+        /* 메인 레이아웃: 설정 구역 최소화, 프리뷰 구역 극대화 */
         .main-content {
             flex: 1;
             display: flex;
             padding: 20px;
             gap: 20px;
             height: 100%;
+            overflow: hidden;
         }
 
-        /* 왼쪽 설정 영역 (콤팩트하게 축소) */
+        /* 왼쪽 설정 영역 */
         .config-area {
-            width: 380px;
+            width: 360px;
+            min-width: 360px;
             background: white;
             border-radius: 12px;
             padding: 20px;
@@ -71,10 +74,8 @@ html_content = """<!DOCTYPE html>
         .input-group textarea { resize: none; flex: 1; min-height: 140px; }
         .input-group.flex-target { flex: 1; display: flex; flex-direction: column; }
 
-        /* 파일 업로드 기능 스타일 */
-        .file-upload-wrapper {
-            margin-top: 4px;
-        }
+        /* 파일 업로드 컴포넌트 */
+        .file-upload-wrapper { margin-top: 4px; }
         .file-label {
             background: #f1f5f9; border: 1px dashed #cbd5e0; padding: 8px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; width: 100%; justify-content: center; transition: 0.2s;
         }
@@ -84,7 +85,7 @@ html_content = """<!DOCTYPE html>
         .btn-test { background: #f1f5f9; border: 1px solid #cbd5e0; padding: 0 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
         .btn-test:hover { background: #e2e8f0; }
 
-        /* 👉 오른쪽 실시간 프리뷰 영역 (화면을 꽉 채우도록 대폭 확장) */
+        /* 오른쪽 실시간 프리뷰 영역 */
         .chat-area {
             flex: 1;
             background: var(--chat-bg);
@@ -99,7 +100,7 @@ html_content = """<!DOCTYPE html>
         .chat-header { background: #ffffff; padding: 18px 24px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
         .chat-messages { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background-color: #f8fafc; }
         
-        /* 메시지 말풍선 가독성 확장 */
+        /* 말풍선 가독성 확장 */
         .message { max-width: 75%; padding: 14px 20px; border-radius: 16px; font-size: 14.5px; line-height: 1.6; word-break: break-all; }
         .message.user { align-self: flex-end; background: var(--user-msg); border-top-right-radius: 2px; color: #000; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .message.bot { align-self: flex-start; background: var(--bot-msg); border-top-left-radius: 2px; border: 1px solid #e2e8f0; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
@@ -179,16 +180,12 @@ html_content = """<!DOCTYPE html>
     </div>
 
     <script>
-        // PDF 라이브러리 워커 경로 지정
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
         let chatHistory = [];
 
-        // PDF 및 TXT 문서 파싱 및 주입 처리 함수
         async function handleFileUpload(input) {
             const file = input.files[0];
             if (!file) return;
-
             const knowledgeArea = document.getElementById('knowledgeData');
             
             if (file.type === "text/plain") {
@@ -206,16 +203,14 @@ html_content = """<!DOCTYPE html>
                         const typedarray = new Uint8Array(e.target.result);
                         const pdf = await pdfjsLib.getDocument(typedarray).promise;
                         let extractedText = "";
-                        
                         for (let i = 1; i <= pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
                             const textContent = await page.getTextContent();
                             const pageText = textContent.items.map(item => item.str).join(" ");
                             extractedText += pageText + "\\n";
                         }
-                        
                         knowledgeArea.value += `\\n\\n[첨부 PDF 데이터: ${file.name}]\\n` + extractedText;
-                        alert(`✅ PDF 파일('${file.name}') 총 ${pdf.numPages}페이지에서 텍스트를 전량 추출하여 주입했습니다.`);
+                        alert(`✅ PDF 파일('${file.name}') 총 ${pdf.numPages}페이지 텍스트 추출 완료!`);
                     } catch (err) {
                         alert("❌ PDF 추출 오류: " + err.message);
                     }
@@ -224,11 +219,9 @@ html_content = """<!DOCTYPE html>
             }
         }
 
-        // API 키 사전 테스트 함수
         async function testConnection() {
             const apiKey = document.getElementById('apiKey').value.trim();
             if (!apiKey) { alert('인증 키를 입력해주세요.'); return; }
-            
             document.getElementById('status').innerText = "인증 대기 중...";
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
@@ -237,18 +230,15 @@ html_content = """<!DOCTYPE html>
                     document.getElementById('status').innerText = "연결 완료";
                     document.getElementById('status').style.background = "#dcfce7";
                     document.getElementById('status').style.color = "#15803d";
-                } else {
-                    throw new Error();
-                }
+                } else { throw new Error(); }
             } catch (e) {
-                alert('❌ 인증 실패! 입력하신 API 키의 권한을 재확인하세요.');
+                alert('❌ 인증 실패! API 키를 다시 확인하세요.');
                 document.getElementById('status').innerText = "연결 실패";
                 document.getElementById('status').style.background = "#fee2e2";
                 document.getElementById('status').style.color = "#b91c1c";
             }
         }
 
-        // 대화 전송 및 API 통신 기능
         async function sendMessage() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const systemPrompt = document.getElementById('systemPrompt').value.trim();
@@ -264,37 +254,24 @@ html_content = """<!DOCTYPE html>
             document.getElementById('loading').style.display = 'block';
 
             const fullInstruction = `${systemPrompt}\\n\\n[참고 외부 자료 데이터]\\n${knowledgeData}`;
-
             const apiBody = {
-                contents: [
-                    ...chatHistory,
-                    { role: "user", parts: [{ text: userText }] }
-                ],
-                systemInstruction: {
-                    parts: [{ text: fullInstruction }]
-                }
+                contents: [...chatHistory, { role: "user", parts: [{ text: userText }] }],
+                systemInstruction: { parts: [{ text: fullInstruction }] }
             };
 
             try {
-                // ⚠️ 핵심 조치: 에러를 방지하기 위해 구형 모델명을 버리고 최신 gemini-2.5-flash 모델 사용 호출로 전면 수정
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(apiBody)
                 });
-
                 const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
                 
-                if (data.error) {
-                    throw new Error(data.error.message);
-                }
-
                 const botResponse = data.candidates[0].content.parts[0].text;
-
                 appendMessage(botResponse, 'bot');
                 chatHistory.push({ role: "user", parts: [{ text: userText }] });
                 chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
-
             } catch (error) {
                 console.error(error);
                 appendMessage("❌ 오류가 발생했습니다: " + error.message, 'system');
@@ -315,8 +292,9 @@ html_content = """<!DOCTYPE html>
 </body>
 </html>"""
 
+# 2. 파일 쓰기 작업을 html_content 정의와 확실하게 분리하여 실행
 file_path = "index.html"
 with open(file_path, "w", encoding="utf-8") as f:
     f.write(html_content)
 
-print(f"성공적으로 '{file_path}' 파일이 업데이트되었습니다.")
+print(f"성공적으로 깔끔한 '{file_path}' 파일이 업데이트되었습니다.")
