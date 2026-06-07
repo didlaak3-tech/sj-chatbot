@@ -1,71 +1,165 @@
 import os
 
-# HTML/JS 코드 문자열 정의
 html_content = """<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>삼정고 인공지능(AI) 특화 챗봇 실습실</title>
+    <title>삼정고 챗봇 만들기 수행 - 구동윤 선생님</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; }
-        body { background-color: #f5f6fa; color: #333; display: flex; flex-direction: column; height: 100vh; padding: 20px; }
-        .container { display: flex; width: 100%; height: 100%; max-width: 1200px; margin: 0 auto; gap: 20px; }
+        :root {
+            --primary-color: #3b82f6;
+            --bg-color: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --chat-bg: #e2e8f0;
+            --user-msg: #fef01b;
+            --bot-msg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Malgun Gothic', sans-serif; }
+        body { background-color: var(--bg-color); color: #334155; display: flex; height: 100vh; overflow: hidden; }
+
+        /* 왼쪽 사이드바: 수행평가 안내 */
+        .sidebar {
+            width: 380px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .sidebar h1 { font-size: 20px; color: #0f172a; margin-bottom: 5px; }
+        .sidebar .author { font-size: 13px; color: #64748b; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
         
-        /* 왼쪽 설정 패널 */
-        .config-panel { flex: 1; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 15px; }
-        .config-panel h2 { font-size: 18px; color: #4a5568; border-bottom: 2px solid #edf2f7; padding-bottom: 8px; }
-        .input-group { display: flex; flex-direction: column; gap: 6px; }
-        .input-group label { font-size: 13px; font-weight: bold; color: #718096; }
-        .input-group input, .input-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; }
-        .input-group textarea { resize: none; flex: 1; min-height: 120px; }
+        .section-title { font-size: 15px; font-weight: bold; color: var(--primary-color); margin: 20px 0 10px; display: flex; align-items: center; gap: 8px; }
+        .info-card { background: #f1f5f9; border-radius: 8px; padding: 15px; font-size: 13px; line-height: 1.6; margin-bottom: 10px; }
         
-        /* 오른쪽 채팅 패널 */
-        .chat-panel { flex: 1.2; background: #b2c7da; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
-        .chat-header { background: #a2b9cf; padding: 15px; font-weight: bold; font-size: 16px; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .rubric-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 10px; }
+        .rubric-table th, .rubric-table td { border: 1px solid #cbd5e0; padding: 8px; text-align: left; }
+        .rubric-table th { background: #f8fafc; }
+
+        /* 중앙/오른쪽: 챗봇 빌더 및 채팅 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* 설정 패널 */
+        .config-area {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-size: 13px; font-weight: bold; color: #475569; }
+        .input-group input, .input-group textarea { 
+            padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; transition: 0.2s;
+        }
+        .input-group input:focus, .input-group textarea:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .input-group textarea { resize: none; flex: 1; min-height: 150px; }
+
+        .btn-test { background: #f1f5f9; border: 1px solid #cbd5e0; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-test:hover { background: #e2e8f0; }
+
+        /* 채팅 창 */
+        .chat-area {
+            flex: 1.2;
+            background: var(--chat-bg);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .chat-header { background: #ffffff; padding: 15px 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e0; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         
-        /* 말풍선 스타일 */
-        .message { display: flex; flex-direction: column; max-width: 75%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.4; word-break: break-all; }
-        .message.user { background-color: #fef01b; align-self: flex-end; border-top-right-radius: 0; color: #000; }
-        .message.bot { background-color: white; align-self: flex-start; border-top-left-radius: 0; color: #000; }
-        .message.system { background-color: rgba(0,0,0,0.1); color: white; align-self: center; font-size: 12px; border-radius: 15px; padding: 4px 12px; max-width: 90%; }
-        
-        /* 채팅 입력창 */
-        .chat-input-area { display: flex; background: white; padding: 10px; gap: 10px; border-top: 1px solid #edf2f7; }
-        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; }
-        .chat-input-area button { background: #fef01b; border: 1px solid #d6cc1c; padding: 0 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .chat-input-area button:hover { background: #fadc10; }
+        .message { max-width: 80%; padding: 12px 16px; border-radius: 15px; font-size: 14px; line-height: 1.5; position: relative; }
+        .message.user { align-self: flex-end; background: var(--user-msg); border-bottom-right-radius: 2px; }
+        .message.bot { align-self: flex-start; background: var(--bot-msg); border-bottom-left-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .message.system { align-self: center; background: rgba(0,0,0,0.05); font-size: 11px; padding: 5px 15px; border-radius: 20px; color: #64748b; }
+
+        .loading { display: none; align-self: flex-start; background: #eee; padding: 10px; border-radius: 10px; font-size: 12px; }
+
+        .chat-input-container { padding: 15px; background: white; display: flex; gap: 10px; }
+        .chat-input-container input { flex: 1; padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; }
+        .chat-input-container button { background: var(--primary-color); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .chat-input-container button:hover { opacity: 0.9; }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="config-panel">
-            <h2>🤖 AI 챗봇 빌더 커스텀 설정</h2>
-            
+    <div class="sidebar">
+        <h1>🤖 삼정고 챗봇 만들기 수행</h1>
+        <div class="author">제작: 구동윤 선생님</div>
+
+        <div class="section-title"><i class="fa-solid fa-circle-info"></i> 수행평가 안내</div>
+        <div class="info-card">
+            본 실습은 Gemini 1.5 API를 활용하여 <strong>RAG(검색 증강 생성)</strong> 기반의 커스텀 챗봇을 만드는 과정입니다. 왼쪽 설정값을 변경하면 챗봇의 성격과 지식이 즉시 반영됩니다.
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-list-check"></i> 평가 루브릭</div>
+        <table class="rubric-table">
+            <tr><th>항목</th><th>기준</th><th>배점</th></tr>
+            <tr><td>프롬프트</td><td>독창적 페르소나 설정</td><td>3</td></tr>
+            <tr><td>지식주입</td><td>외부 데이터 구조화</td><td>3</td></tr>
+            <tr><td>배포</td><td>GitHub Pages 활성화</td><td>4</td></tr>
+        </table>
+
+        <div class="section-title"><i class="fa-solid fa-link"></i> 학습 자료</div>
+        <div class="info-card" style="background:#fffbeb; border:1px solid #fde68a;">
+            • <a href="https://aistudio.google.com/" target="_blank">Google AI Studio (API 키 발급)</a><br>
+            • <a href="https://github.com/" target="_blank">GitHub (배포용 계정)</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="config-area">
             <div class="input-group">
-                <label for="apiKey">1. 인증 키 (선생님이 제공한 API KEY 입력)</label>
-                <input type="password" id="apiKey" placeholder="AI Studio에서 발급받은 API Key를 입력하세요">
+                <label>1. API KEY (AQ. 또는 AIza...)</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="password" id="apiKey" style="flex:1;" placeholder="API Key를 입력하세요">
+                    <button class="btn-test" onclick="testConnection()">연결 테스트</button>
+                </div>
             </div>
             
             <div class="input-group" style="flex: 1; display:flex; flex-direction:column;">
-                <label for="systemPrompt">2. 프롬프트 설계 (챗봇의 페르소나 및 역할 정의)</label>
-                <textarea id="systemPrompt" placeholder="예시: 너는 삼정고 3학년 매점 안내 이모야. 다정한 사투리를 쓰며 학생들을 맞이해줘. 정해진 매점 메뉴 데이터 외의 질문에는 모른다고 답해줘."></textarea>
+                <label>2. 시스템 프롬프트 (페르소나 설계)</label>
+                <textarea id="systemPrompt" placeholder="예: 너는 삼정고의 역사 선생님이야. 아주 인자하고 아재개그를 좋아하는 성격이야."></textarea>
             </div>
-            
+
             <div class="input-group" style="flex: 1; display:flex; flex-direction:column;">
-                <label for="knowledgeData">3. 선언적 지식 주입 (챗봇이 학습할 외부 데이터 원문)</label>
-                <textarea id="knowledgeData" placeholder="예시: [매점 메뉴 일람] 피자빵: 1500원, 초코우유: 1200원, 바나나우유: 1300원..."></textarea>
+                <label>3. 선언적 지식 (지식 베이스 주입)</label>
+                <textarea id="knowledgeData" placeholder="예: [삼정고 연혁] 19XX년 개교, 교화: 개나리..."></textarea>
             </div>
         </div>
 
-        <div class="chat-panel">
-            <div class="chat-header">💬 실시간 챗봇 만들기 구동윤 쌤이 직접 제작함.</div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="message system">왼쪽 설정을 완료한 뒤 대화를 시작하세요.</div>
+        <div class="chat-area">
+            <div class="chat-header">
+                <span>💬 실시간 프리뷰</span>
+                <span id="status" style="font-size:12px; color:#64748b;">준비됨</span>
             </div>
-            <div class="chat-input-area">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message system">설정을 완료하고 대화를 시작하세요.</div>
+            </div>
+            <div class="loading" id="loading">봇이 생각 중입니다...</div>
+            <div class="chat-input-container">
                 <input type="text" id="userInput" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13) sendMessage()">
                 <button onclick="sendMessage()">전송</button>
             </div>
@@ -75,6 +169,27 @@ html_content = """<!DOCTYPE html>
     <script>
         let chatHistory = [];
 
+        // API 키 테스트 함수
+        async function testConnection() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) { alert('키를 입력해주세요.'); return; }
+            
+            document.getElementById('status').innerText = "연결 확인 중...";
+            try {
+                // 모델 리스트를 호출하여 키 유효성 확인
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (res.ok) {
+                    alert('✅ 연결 성공! 올바른 API 키입니다.');
+                    document.getElementById('status').innerText = "연결됨";
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                alert('❌ 연결 실패. API 키를 다시 확인하세요.');
+                document.getElementById('status').innerText = "오류 발생";
+            }
+        }
+
         async function sendMessage() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const systemPrompt = document.getElementById('systemPrompt').value.trim();
@@ -82,24 +197,23 @@ html_content = """<!DOCTYPE html>
             const userInputField = document.getElementById('userInput');
             const userText = userInputField.value.trim();
 
-            if (!apiKey) { alert('선생님께 API Key를 확인받아 입력해주세요.'); return; }
+            if (!apiKey) { alert('API Key를 먼저 입력하세요.'); return; }
             if (!userText) return;
 
-            // 유저 메시지 화면 표시
             appendMessage(userText, 'user');
             userInputField.value = '';
+            document.getElementById('loading').style.display = 'block';
 
-            // 시스템 지식 컨텍스트 합성 (RAG 기본형태)
-            const fullSystemInstruction = `${systemPrompt}\n\n[참고 데이터 및 지식 베이스]\n${knowledgeData}`;
+            const fullInstruction = `${systemPrompt}\\n\\n참고 정보:\\n${knowledgeData}`;
 
-            // API 요청 데이터 바디 구성 (Gemini 1.5 Flash 규격)
+            // 핵심: AQ. 키 이슈 해결을 위해 Authorization 헤더를 쓰지 않고 URL의 key 파라미터만 사용
             const apiBody = {
                 contents: [
                     ...chatHistory,
                     { role: "user", parts: [{ text: userText }] }
                 ],
                 systemInstruction: {
-                    parts: [{ text: fullSystemInstruction }]
+                    parts: [{ text: fullInstruction }]
                 }
             };
 
@@ -111,16 +225,22 @@ html_content = """<!DOCTYPE html>
                 });
 
                 const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
                 const botResponse = data.candidates[0].content.parts[0].text;
 
-                // 봇 대화 기록 누적 및 화면 출력
                 appendMessage(botResponse, 'bot');
                 chatHistory.push({ role: "user", parts: [{ text: userText }] });
                 chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
 
             } catch (error) {
                 console.error(error);
-                appendMessage("⚠️ 에러가 발생했습니다. API Key를 확인하거나 잠시 후 다시 시도해주세요.", 'system');
+                appendMessage("⚠️ 오류: " + error.message, 'system');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
@@ -128,7 +248,10 @@ html_content = """<!DOCTYPE html>
             const chatMessages = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', sender);
+            
+            // 마크다운 형식 간단 대응 (줄바꿈 등)
             messageDiv.innerText = text;
+            
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -136,9 +259,10 @@ html_content = """<!DOCTYPE html>
 </body>
 </html>"""
 
-# 파일 생성 및 저장
 file_path = "index.html"
 with open(file_path, "w", encoding="utf-8") as f:
     f.write(html_content)
 
 print(f"성공적으로 '{file_path}' 파일이 생성되었습니다.")
+
+이 코드가 구동윤 선생님의 수업에 큰 도움이 되길 바랍니다! 추가로 수정이 필요한 부분이 있다면 말씀해 주세요.
